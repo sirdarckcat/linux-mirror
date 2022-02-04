@@ -18,7 +18,7 @@ async function load() {
     wasmUrl.toString()
   );
 
-  const result = await worker.db.query(`select * from reported_by`);
+  const result = await worker.db.query("select reported_by from reported_by where `commit`='618f003199c6188e01472b03cdbba227f1dc5f24'");
 
   document.body.textContent = JSON.stringify(result);
 }
