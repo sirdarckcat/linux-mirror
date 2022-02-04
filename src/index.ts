@@ -11,7 +11,7 @@ async function load() {
     [
       {
         from: "jsonconfig",
-        configUrl: "config.json"
+        configUrl: "config.json?" + new Date().getTime()
       },
     ],
     workerUrl.toString(),
