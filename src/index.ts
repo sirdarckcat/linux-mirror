@@ -18,7 +18,14 @@ async function load() {
     wasmUrl.toString()
   );
 
-  const result = await worker.db.query("select reported_by from reported_by where `commit`='618f003199c6188e01472b03cdbba227f1dc5f24'");
+  const commit = location.hash.slice(1) || '618f003199c6188e01472b03cdbba227f1dc5f24';
+
+  const result = {
+    tags: await worker.db.query("SELECT tags FROM tags WHERE commit = ?", [commit]),
+    reported_by: await worker.db.query("SELECT reported_by FROM reported_by WHERE commit = ?", [commit]),
+    fixes: await worker.db.query("SELECT fixes FROM fixes WHERE commit = ?", [commit]),
+    backports: await worker.db.query("SELECT commit FROM upstream WHERE upstream = ?", [commit]),
+  };
 
   document.body.textContent = JSON.stringify(result);
 }
