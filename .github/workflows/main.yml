@@ -121,8 +121,7 @@ jobs:
               "databaseLengthBytes": '${databaseLengthBytes}',
               "serverChunkSize": '${SERVER_CHUNK_SIZE}',
               "urlPrefix": "'${uploadedPath}'",
-              "suffixLength": '${SUFFIX_LENGTH}',
-              "cacheBust": "'${ databaseChecksum }'"
+              "suffixLength": '${SUFFIX_LENGTH}'
           }' | tee "dist/config.json"
 
       - name: Rebuild website
