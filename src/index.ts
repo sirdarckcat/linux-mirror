@@ -25,8 +25,8 @@ async function load() {
     "commit landed on upstream on": await worker.db.query("SELECT tags FROM tags WHERE `commit` = ?", [commit]),
     "commit was backported to": await worker.db.query("SELECT tags FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream WHERE upstream = ?)", [commit]),
     "commit fixes bug introduced by": await worker.db.query("SELECT fixes FROM fixes WHERE `commit` = ?", [commit]),
-    "bug landed on upstream on": await worker.db.query("SELECT tags FROM tags JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ?) ON (`commit`>trunc AND `commit`<trunc||'g')", [commit]),
-    "bug patch was backported to": await worker.db.query("SELECT tags FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ?) ON (upstream>trunc AND upstream<trunc||'g'))", [commit]),
+    "buggy commit landed on upstream on": await worker.db.query("SELECT tags FROM tags JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ?) ON (`commit`>trunc AND `commit`<trunc||'g')", [commit]),
+    "buggy commit was backported to": await worker.db.query("SELECT tags FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ?) ON (upstream>trunc AND upstream<trunc||'g'))", [commit]),
     "syzkaller reporter email": await worker.db.query("SELECT reported_by FROM reported_by WHERE `commit` = ?", [commit])
   };
 
