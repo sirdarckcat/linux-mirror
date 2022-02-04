@@ -73,6 +73,7 @@ jobs:
           sqlite3 mirror.sl3 'CREATE INDEX upstream_commit ON upstream (`commit`,`upstream`);'
           sqlite3 mirror.sl3 'CREATE INDEX upstream_upstream ON upstream (`upstream`,`commit`);'
           sqlite3 mirror.sl3 'pragma journal_mode = delete; pragma page_size = 1024; vacuum;'
+          echo "::set-output name=databaseChecksum::$(sha1sum mirror.sl3 | cut -f1 -d' ')"
 
       - id: 'upload-db'
         uses: 'google-github-actions/upload-cloud-storage@v0'
@@ -109,6 +110,7 @@ jobs:
         env:
           requestChunkSize: '${{ steps.split-db.outputs.requestChunkSize }}'
           databaseLengthBytes: '${{ steps.split-db.outputs.databaseLengthBytes }}'
+          databaseChecksum: '${{ steps.split-db.outputs.databaseChecksum }}'
           uploadedPath: 'https://storage.googleapis.com/${{ env.BUCKET_NAME }}/${{ env.URL_PREFIX }}'
         run: |
           echo '{
@@ -118,7 +120,7 @@ jobs:
               "serverChunkSize": '${SERVER_CHUNK_SIZE}',
               "urlPrefix": "'${uploadedPath}'",
               "suffixLength": '${SUFFIX_LENGTH}',
-              "cacheBust": "'${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}'"
+              "cacheBust": "'${ databaseChecksum }'"
           }' | tee "dist/config.json"
 
       - name: Rebuild website
