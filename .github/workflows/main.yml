@@ -118,7 +118,7 @@ jobs:
               "serverChunkSize": '${SERVER_CHUNK_SIZE}',
               "urlPrefix": "'${uploadedPath}'",
               "suffixLength": '${SUFFIX_LENGTH}',
-              "cacheBust": "'${GITHUB_SHA}'"
+              "cacheBust": "'${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}'"
           }' | tee "dist/config.json"
 
       - name: Rebuild website
