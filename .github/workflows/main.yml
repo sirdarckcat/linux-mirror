@@ -101,7 +101,7 @@ jobs:
           glob: '${{ env.URL_PREFIX }}*'
           gzip: false
           headers: |-
-            cache-control: private
+            cache-control: no-cache
 
       - uses: actions/checkout@v2
         with:
@@ -124,13 +124,11 @@ jobs:
               "suffixLength": '${SUFFIX_LENGTH}'
           }' | tee "dist/config.json"
 
-      - name: Rebuild website
+      - name: Rebuild config
         working-directory: ./linux-mirror
         run: |
-          npm install
-          ./node_modules/.bin/webpack
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add dist
+          git add dist/config.json
           git commit -m '[automatic] update website' || true
           git push
