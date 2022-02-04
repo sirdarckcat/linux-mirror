@@ -80,7 +80,7 @@ jobs:
         with:
           parent: false
           path: 'linux-repo/${{ env.DB_NAME }}'
-          destination: '${{ env.BUCKET_NAME }}/${{ env.DB_NAME }}'
+          destination: '${{ env.BUCKET_NAME }}'
 
       - id: 'split-db'
         working-directory: ./linux-repo
@@ -89,7 +89,8 @@ jobs:
           requestChunkSize="$(sqlite3 "${DB_NAME}" 'pragma page_size')"
           rm -f ${URL_PREFIX}*
           split "${DB_NAME}" --bytes=${SERVER_CHUNK_SIZE} --suffix-length=${SUFFIX_LENGTH} --numeric-suffixes ${URL_PREFIX}
-          echo "::set-output name=requestChunkSize::${requestChunkSize},databaseLengthBytes::${databaseLengthBytes}"
+          echo "::set-output name=requestChunkSize::${requestChunkSize}"
+          echo "::set-output name=databaseLengthBytes::${databaseLengthBytes}"
 
       - id: 'upload-db-chunks'
         uses: 'google-github-actions/upload-cloud-storage@v0'
@@ -122,7 +123,6 @@ jobs:
       - name: Rebuild website
         working-directory: ./linux-mirror
         run: |
-          exit
           npm install
           ./node_modules/.bin/webpack
           git config --local user.email "action@github.com"
