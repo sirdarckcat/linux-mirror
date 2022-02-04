@@ -4,5 +4,6 @@
     "databaseLengthBytes": 525714432,
     "serverChunkSize": 10485760,
     "urlPrefix": "https://storage.googleapis.com/linux-mirror-db/mirror-chunk-",
-    "suffixLength": 3
+    "suffixLength": 3,
+    "cacheBust": "x"
 }
