@@ -75,6 +75,7 @@ jobs:
           destination: '${{ env.BUCKET_NAME }}'
           parent: false
           glob: '${{ env.URL_PREFIX }}*'
+          path: .
           gzip: false
           headers: |-
             cache-control: no-cache
