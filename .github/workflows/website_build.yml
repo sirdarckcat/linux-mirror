@@ -1,0 +1,21 @@
+name: website_build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: "Rebuild website"
+        run: |
+          npm install
+          ./node_modules/.bin/webpack
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add dist
+          git commit -m '[automatic] update website' || true
+          git push
