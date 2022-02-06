@@ -21,7 +21,7 @@ async function load(commit: string) {
   let githubCommit = null;
   const getGithubCommit = async () => {
     try {
-      const ret: ({ sha: string, commit: { message: string } } | { message: string }) = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${encodeURI(commit)}`)).json();
+      const ret: any = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${encodeURI(commit)}`)).json();
       if (typeof ret.sha == "undefined" || typeof ret.commit == "undefined") {
         return { sha: commit, commit: { message: "[!] GitHub error: " + ret.message } }
       }
