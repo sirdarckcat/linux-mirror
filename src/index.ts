@@ -27,7 +27,7 @@ async function load() {
   }
 
   let githubCommit = null;
-  const getGithubCommit = ()=>await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${commit}`)).json();
+  const getGithubCommit = async ()=>await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${commit}`)).json();
 
   if(commit.length < 40) {
     githubCommit = await getGithubCommit();
