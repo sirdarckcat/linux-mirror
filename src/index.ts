@@ -81,7 +81,7 @@ const doit = async function () {
     const result = load(commit);
     output.textContent = JSON.stringify(result, null, 1);
     document.body.className = 'done';
-  } catch (e: Error) {
+  } catch (e) {
     output.textContent = String(e);
     document.body.className = 'error';
   }
