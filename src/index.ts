@@ -6,7 +6,7 @@ const workerUrl = new URL(
 );
 const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
-async function load() {
+async function load(commit: string) {
   const worker = await createDbWorker(
     [
       {
@@ -22,7 +22,7 @@ async function load() {
   const getGithubCommit = async () => {
     try {
       const ret: ({ sha: string, commit: { message: string } } | { message: string }) = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${encodeURI(commit)}`)).json();
-      if (!ret.sha || !ret.commit) {
+      if (typeof ret.sha == "undefined" || typeof ret.commit == "undefined") {
         return { sha: commit, commit: { message: "[!] GitHub error: " + ret.message } }
       }
       return ret;
