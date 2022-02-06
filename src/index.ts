@@ -45,17 +45,21 @@ async function load() {
     if (!githubCommit.sha) throw new Error("Couldn't find commit " + commit);
     commit = githubCommit.sha;
   }
+  
+  if (commit.length < 7 && commit.length >=4) {
+    if (!confirm("Commit is very short - might return too many (or incorrect) results.")) return;
+  } else if (commit.length < 4) return alert("Commit is too short");
 
   const results = await Promise.all([
     githubCommit || getGithubCommit (),
-    worker.db.query("SELECT tags FROM tags WHERE `commit` = ?", [commit]),
-    worker.db.query("SELECT upstream FROM upstream WHERE `commit` = ?", [commit]),
-    worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream WHERE upstream = ?)", [commit]),
-    worker.db.query("SELECT fixes FROM fixes WHERE `commit` = ? AND LENGTH(fixes)>=4", [commit]),
-    worker.db.query("SELECT tags, `commit` FROM tags JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ? AND LENGTH(fixes)>=4) ON (`commit`>trunc AND `commit`<trunc||'g')", [commit]),
-    worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ? AND LENGTH(fixes)>=4) ON (upstream>trunc AND upstream<trunc||'g'))", [commit]),
-    worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ?)", [commit, commit]),
-    worker.db.query("SELECT reported_by, `commit` FROM reported_by WHERE `commit` = ? OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ?)", [commit, commit, commit]),
+    worker.db.query("SELECT tags FROM tags WHERE `commit` >= ? AND `commit <= ? || 'g'`", [commit, commit]),
+    worker.db.query("SELECT upstream FROM upstream WHERE `commit` >= ? AND `commit <= ? || 'g'`", [commit, commit]),
+    worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream WHERE upstream >= ? AND upstream <= ? || 'g')", [commit, commit]),
+    worker.db.query("SELECT fixes FROM fixes WHERE `commit` >= ? AND `commit <= ? || 'g' AND LENGTH(fixes)>=4", [commit, commit]),
+    worker.db.query("SELECT tags, `commit` FROM tags JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` >= ? AND commit <= ? || 'g' AND LENGTH(fixes)>=4) ON (`commit`>trunc AND `commit`<trunc||'g')", [commit, commit]),
+    worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` >= ? AND `commit` <= ? || 'g' AND LENGTH(fixes)>=4) ON (upstream>trunc AND upstream<trunc||'g'))", [commit, commit]),
+    worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit]),
+    worker.db.query("SELECT reported_by, `commit` FROM reported_by WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
   ]);
 
   const result = {
