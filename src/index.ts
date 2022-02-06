@@ -36,7 +36,7 @@ async function load() {
   }
 
   const results = await Promise.all([
-    githubCommit || getGithubCommit ()
+    githubCommit || getGithubCommit (),
     worker.db.query("SELECT tags FROM tags WHERE `commit` = ?", [commit]),
     worker.db.query("SELECT upstream FROM upstream WHERE `commit` = ?", [commit]),
     worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream WHERE upstream = ?)", [commit]),
