@@ -2,6 +2,9 @@ name: website_build
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+    - 'src/**'
 
 jobs:
   sync:
