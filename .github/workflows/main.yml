@@ -98,4 +98,4 @@ jobs:
           git config --local user.name "GitHub Action"
           git add dist/config.json
           git commit -m '[automatic] update website' || true
-          git push
+          git pull --rebase && git push
