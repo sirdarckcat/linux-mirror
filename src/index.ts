@@ -28,21 +28,27 @@ async function load() {
 
   const results = await Promise.all([
     worker.db.query("SELECT tags FROM tags WHERE `commit` = ?", [commit]),
-    worker.db.query("SELECT tags FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream WHERE upstream = ?)", [commit]),
+    worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream WHERE upstream = ?)", [commit]),
     worker.db.query("SELECT fixes FROM fixes WHERE `commit` = ?", [commit]),
-    worker.db.query("SELECT tags FROM tags JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ? AND LENGTH(fixes)>4) ON (`commit`>trunc AND `commit`<trunc||'g')", [commit]),
-    worker.db.query("SELECT tags FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ? AND LENGTH(fixes)>4) ON (upstream>trunc AND upstream<trunc||'g'))", [commit]),
-    worker.db.query("SELECT reported_by FROM reported_by WHERE `commit` = ?", [commit])
+    worker.db.query("SELECT tags, `commit` FROM tags JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ? AND LENGTH(fixes)>4) ON (`commit`>trunc AND `commit`<trunc||'g')", [commit]),
+    worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` = ? AND LENGTH(fixes)>4) ON (upstream>trunc AND upstream<trunc||'g'))", [commit]),
+    worker.db.query("SELECT `commit`, fixes FROM fixes WHERE LENGTH(fixes)>4 AND fixes >= substr(?, 1, 4) AND fixes <= ?", [commit, commit]),
+    worker.db.query("SELECT tags FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>4 AND fixes >= substr(?, 1, 4) AND fixes <= ?)", [commit, commit]),
+    worker.db.query("SELECT `commit` FROM upstream WHERE upstream IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>4 AND fixes >= substr(?, 1, 4) AND fixes <= ?)", [commit, commit]),
+    worker.db.query("SELECT reported_by, `commit` FROM reported_by WHERE `commit` = ? OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>4 AND fixes >= substr(?, 1, 4) AND fixes <= ?)", [commit, commit, commit]),
   ]);
 
   const result = {
     commit,
-    "commit landed on upstream on": results[0],
-    "commit was backported to": results[1],
-    "commit fixes bug introduced by": results[2],
-    "buggy commit landed on upstream on": results[3],
-    "buggy commit was backported to": results[4],
-    "syzkaller reporter email": results[5]
+    "the commit landed on upstream on": results[0],
+    "the commit was backported to": results[1],
+    "the commit fixes a bug introduced by": results[2],
+    "the buggy commit landed on upstream on": results[3],
+    "the buggy commit was backported to": results[4],
+    "the commit introduced a bug fixed by": results[5],
+    "the fix commit landed on upstream on": results[6],
+    "the fix commit was backported to": results[7],
+    "syzkaller reference for the commit and the fix commit": results[8]
   };
 
   document.body.style.whiteSpace = 'pre-wrap';
