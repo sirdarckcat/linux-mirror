@@ -70,4 +70,4 @@ async function load() {
   } catch(e) {
     alert(e);
   }
-});
+})();
