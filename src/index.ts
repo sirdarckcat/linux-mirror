@@ -49,15 +49,15 @@ async function load() {
 
   const result = {
     commit,
-    "details": results.unshift().commit.message.split("\n"),
-    "the commit landed on upstream on": results.unshift(),
-    "the commit is a backport of": results.unshift(),
-    "the commit was backported to": results.unshift(),
-    "the commit fixes a bug introduced by": results.unshift(),
-    "the buggy commit landed on upstream on": results.unshift(),
-    "the buggy commit was backported to": results.unshift(),
-    "the commit introduced a bug fixed by": results.unshift(),
-    "syzkaller reference for the commit and the fix commit": results.unshift()
+    "details": results.shift().commit.message.split("\n"),
+    "the commit landed on upstream on": results.shift(),
+    "the commit is a backport of": results.shift(),
+    "the commit was backported to": results.shift(),
+    "the commit fixes a bug introduced by": results.shift(),
+    "the buggy commit landed on upstream on": results.shift(),
+    "the buggy commit was backported to": results.shift(),
+    "the commit introduced a bug fixed by": results.shift(),
+    "syzkaller reference for the commit and the fix commit": results.shift()
   };
 
   document.body.style.whiteSpace = 'pre-wrap';
