@@ -37,9 +37,9 @@ async function load(commit: string) {
     commit = githubCommit.sha;
   }
 
-  if (commit.length < 7 && commit.length >= 4) {
-    if (!confirm("Commit is very short - might return too many (or incorrect) results.")) return;
-  } else if (commit.length < 4) throw new Error("Commit is too short");
+  if (commit.length < 4 || (commit.length < 7 && commit.length >= 4 && !confirm("Commit is very short - might return too many (or incorrect) results."))) {
+    throw new Error("Commit is too short");
+  }
 
   const results = await Promise.all([
     githubCommit || getGithubCommit(),
@@ -78,7 +78,7 @@ const doit = async function () {
       location.reload();
       return;
     }
-    const result = load(commit);
+    const result = await load(commit);
     output.textContent = JSON.stringify(result, null, 1);
     document.body.className = 'done';
   } catch (e) {
