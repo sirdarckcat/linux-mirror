@@ -1,4 +1,4 @@
-import {createDbWorker} from "sql.js-httpvfs";
+import { createDbWorker } from "sql.js-httpvfs";
 
 const workerUrl = new URL(
   "sql.js-httpvfs/dist/sqlite.worker.js",
@@ -19,30 +19,30 @@ async function load() {
   );
 
   let githubCommit = null;
-  const getGithubCommit = async ()=>{
+  const getGithubCommit = async () => {
     try {
-      const ret = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${commit}`)).json();
+      const ret: ({ sha: string, commit: { message: string } } | { message: string }) = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${encodeURI(commit)}`)).json();
       if (!ret.sha || !ret.commit) {
-        return {sha: commit, commit:{message: "[!] GitHub error: " + ret.message}}
+        return { sha: commit, commit: { message: "[!] GitHub error: " + ret.message } }
       }
       return ret;
-    } catch(e) {
-      return {sha: commit, commit:{message: "[!] Fetch error: " + e}}
+    } catch (e) {
+      return { sha: commit, commit: { message: "[!] Fetch error: " + e } }
     }
   }
 
-  if(commit.length < 40) {
+  if (commit.length < 40) {
     githubCommit = await getGithubCommit();
     if (!githubCommit.sha) throw new Error("Couldn't find commit " + commit);
     commit = githubCommit.sha;
   }
-  
-  if (commit.length < 7 && commit.length >=4) {
+
+  if (commit.length < 7 && commit.length >= 4) {
     if (!confirm("Commit is very short - might return too many (or incorrect) results.")) return;
   } else if (commit.length < 4) throw new Error("Commit is too short");
 
   const results = await Promise.all([
-    githubCommit || getGithubCommit (),
+    githubCommit || getGithubCommit(),
     worker.db.query("SELECT tags FROM tags WHERE `commit` >= ? AND `commit <= ? || 'g'`", [commit, commit]),
     worker.db.query("SELECT upstream FROM upstream WHERE `commit` >= ? AND `commit <= ? || 'g'`", [commit, commit]),
     worker.db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream WHERE upstream >= ? AND upstream <= ? || 'g')", [commit, commit]),
@@ -73,7 +73,7 @@ const doit = async function () {
     let commit = location.hash.slice(1);
     output.textContent = 'Loading ' + commit;
     document.body.className = 'loading';
-    if(!commit) {
+    if (!commit) {
       location.hash = "e1b3fa7";
       location.reload();
       return;
@@ -81,7 +81,7 @@ const doit = async function () {
     const result = load(commit);
     output.textContent = JSON.stringify(result, null, 1);
     document.body.className = 'done';
-  } catch(e) {
+  } catch (e) {
     output.textContent = e;
     document.body.className = 'error';
   }
