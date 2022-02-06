@@ -18,15 +18,6 @@ async function load() {
     wasmUrl.toString()
   );
 
-  let commit = location.hash.slice(1);
-  document.body.textContent = 'Loading ' + commit;
-
-  if(!commit) {
-    location.hash = "e1b3fa7b6471e1b2f4c7573711e7f8ee2e9f3dc3";
-    location.reload();
-    return;
-  }
-
   let githubCommit = null;
   const getGithubCommit = async ()=>{
     try {
@@ -48,7 +39,7 @@ async function load() {
   
   if (commit.length < 7 && commit.length >=4) {
     if (!confirm("Commit is very short - might return too many (or incorrect) results.")) return;
-  } else if (commit.length < 4) return alert("Commit is too short");
+  } else if (commit.length < 4) throw new Error("Commit is too short");
 
   const results = await Promise.all([
     githubCommit || getGithubCommit (),
@@ -62,7 +53,7 @@ async function load() {
     worker.db.query("SELECT reported_by, `commit` FROM reported_by WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
   ]);
 
-  const result = {
+  return {
     commit,
     "details": results.shift().commit.message.split("\n"),
     "the commit landed on upstream on": results.shift(),
@@ -74,16 +65,24 @@ async function load() {
     "the commit introduced a bug fixed by": results.shift(),
     "syzkaller reference for the commit and the fix commit": results.shift()
   };
-
-  document.body.style.whiteSpace = 'pre-wrap';
-  document.body.textContent = JSON.stringify(result, null, 1);
 }
 
 const doit = async function () {
   try {
-    load();
+    let commit = location.hash.slice(1);
+    document.getElementById('output').textContent = 'Loading ' + commit;
+    document.body.className = 'loading';
+    if(!commit) {
+      location.hash = "e1b3fa7";
+      location.reload();
+      return;
+    }
+    const result = load(commit);
+    document.getElementById('output').textContent = JSON.stringify(result, null, 1);
+    document.body.className = 'done';
   } catch(e) {
-    alert(e);
+    document.getElementById('output').textContent = e;
+    document.body.className = 'error';
   }
 };
 
