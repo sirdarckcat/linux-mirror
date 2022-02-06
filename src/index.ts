@@ -68,9 +68,10 @@ async function load() {
 }
 
 const doit = async function () {
+  const output = document.getElementById('output') || document.body;
   try {
     let commit = location.hash.slice(1);
-    document.getElementById('output').textContent = 'Loading ' + commit;
+    output.textContent = 'Loading ' + commit;
     document.body.className = 'loading';
     if(!commit) {
       location.hash = "e1b3fa7";
@@ -78,10 +79,10 @@ const doit = async function () {
       return;
     }
     const result = load(commit);
-    document.getElementById('output').textContent = JSON.stringify(result, null, 1);
+    output.textContent = JSON.stringify(result, null, 1);
     document.body.className = 'done';
   } catch(e) {
-    document.getElementById('output').textContent = e;
+    output.textContent = e;
     document.body.className = 'error';
   }
 };
