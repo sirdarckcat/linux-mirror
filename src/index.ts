@@ -64,10 +64,13 @@ async function load() {
   document.body.textContent = JSON.stringify(result, null, 1);
 }
 
-(async function () {
+const doit = async function () {
   try {
     load();
   } catch(e) {
     alert(e);
   }
-})();
+};
+
+onhashchange = doit;
+doit();
