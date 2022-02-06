@@ -19,6 +19,7 @@ async function load() {
   );
 
   let commit = location.hash.slice(1);
+  document.body.textContent = 'Loading ' + commit;
 
   if(!commit) {
     location.hash = "e1b3fa7b6471e1b2f4c7573711e7f8ee2e9f3dc3";
@@ -27,7 +28,17 @@ async function load() {
   }
 
   let githubCommit = null;
-  const getGithubCommit = async ()=>await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${commit}`)).json();
+  const getGithubCommit = async ()=>{
+    try {
+      const ret = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${commit}`)).json();
+      if (!ret.sha || !ret.commit) {
+        return {sha: commit, commit:{message: "[!] GitHub error: " + ret.message}}
+      }
+      return ret;
+    } catch(e) {
+      return {sha: commit, commit:{message: "[!] Fetch error: " + e}}
+    }
+  }
 
   if(commit.length < 40) {
     githubCommit = await getGithubCommit();
