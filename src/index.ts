@@ -74,7 +74,7 @@ const doit = async function () {
     output.textContent = 'Loading ' + commit;
     document.body.className = 'loading';
     if (!commit) {
-      location.hash = "e1b3fa7";
+      location.hash = "23f57406";
       location.reload();
       return;
     }
