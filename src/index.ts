@@ -147,7 +147,7 @@ class LinuxMirror {
       output.textContent = String(e);
       document.body.className = 'error';
       if (this.initialConfig) {
-        const latestConfig = await fetch(this.config, { cache: "reload" });
+        const latestConfig = await fetch(this.CONFIG, { cache: "reload" });
         const initialConfig = await this.initialConfig;
         if ((await latestConfig.json()).databaseLengthBytes != (await initialConfig.json()).databaseLengthBytes) {
           if (confirm("Database has been updated, reload?")) {
