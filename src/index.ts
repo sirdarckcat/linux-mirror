@@ -15,7 +15,7 @@ async function load(commit: string) {
       [
         {
           from: "jsonconfig",
-          configUrl: "config.json?" + i + "-" + new Date().getTime()
+          configUrl: "https://linux-mirror-db.storage.googleapis.com/config.json"
         },
       ],
       workerUrl.toString(),
