@@ -9,9 +9,9 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 const NUM_WORKERS = 6;
 
 async function load(commit: string) {
-  const workers = [];
+  const workerPromises = [];
   for (let i = 0; i < NUM_WORKERS; i++) {
-    const worker = await createDbWorker(
+    const worker = createDbWorker(
       [
         {
           from: "jsonconfig",
@@ -21,8 +21,9 @@ async function load(commit: string) {
       workerUrl.toString(),
       wasmUrl.toString()
     );
-    workers.push(worker);
+    workerPromises.push(worker);
   }
+  const workers = Promise.all(workerPromises);
 
   let githubCommit = null;
   const getGithubCommit = async () => {
@@ -58,8 +59,10 @@ async function load(commit: string) {
     workers[4].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit]),
     workers[5].db.query("SELECT reported_by, `commit` FROM reported_by WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
   ];
-  if (location.href.match(/__PERF__/)) setInterval(() => console.log(promises), 100);
+  const perfInterval;
+  if (location.href.match(/__PERF__/)) perfInterval = setInterval(() => console.log(...promises), 100);
   const results = await Promise.all(promises);
+  if (location.href.match(/__PERF__/)) clearInterval(perfInterval);
 
   return {
     commit,
