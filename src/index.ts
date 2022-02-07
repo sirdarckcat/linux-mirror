@@ -1,4 +1,4 @@
-import { createDbWorker } from "sql.js-httpvfs";
+import { createDbWorker, WorkerHttpvfs } from "sql.js-httpvfs";
 
 const workerUrl = new URL(
   "sql.js-httpvfs/dist/sqlite.worker.js",
@@ -8,7 +8,7 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
 class LinuxMirror {
   NUM_WORKERS = 6;
-  workers = null;
+  workers:WorkerHttpvfs = null;
 
   public async init() {
     const workerPromises = [];
@@ -28,7 +28,7 @@ class LinuxMirror {
     this.workers = await Promise.all(workerPromises);
   }
 
-  private async getGithubCommit () {
+  private async getGithubCommit (commit: string) {
     try {
       const ret: any = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${encodeURI(commit)}`)).json();
       if (typeof ret.sha == "undefined" || typeof ret.commit == "undefined") {
@@ -44,7 +44,7 @@ class LinuxMirror {
     let githubCommit = null;
 
     if (commit.length < 40) {
-      githubCommit = await this.getGithubCommit();
+      githubCommit = await this.getGithubCommit(commit);
       if (!githubCommit.sha) throw new Error("Couldn't find commit " + commit);
       commit = githubCommit.sha;
     }
@@ -53,8 +53,12 @@ class LinuxMirror {
       throw new Error("Commit is too short");
     }
 
+    if (!this.workers) {
+      throw new Error("Workers are not initialized.");
+    }
+
     const promises = [
-      githubCommit || this.getGithubCommit(),
+      githubCommit || this.getGithubCommit(commit),
       this.workers[0].db.query("SELECT tags FROM tags WHERE `commit` >= ? AND `commit` <= ? || 'g'", [commit, commit]),
       this.workers[0].db.query("SELECT upstream FROM upstream WHERE `commit` >= ? AND `commit` <= ? || 'g'", [commit, commit]),
       this.workers[1].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream WHERE upstream >= ? AND upstream <= ? || 'g')", [commit, commit]),
