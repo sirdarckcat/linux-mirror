@@ -8,16 +8,19 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
 class LinuxMirror {
   NUM_WORKERS = 6;
+  CONFIG = "https://linux-mirror-db.storage.googleapis.com/config.json";
   workers:(WorkerHttpvfs[]|null) = null;
+  initialConfig: Promise<Response>;
 
   public async init() {
+    this.initialConfig = fetch(this.CONFIG);
     const workerPromises = [];
     for (let i = 0; i < this.NUM_WORKERS; i++) {
       const worker = createDbWorker(
         [
           {
             from: "jsonconfig",
-            configUrl: "https://linux-mirror-db.storage.googleapis.com/config.json"
+            configUrl: this.CONFIG
           },
         ],
         workerUrl.toString(),
@@ -144,7 +147,14 @@ class LinuxMirror {
       output.textContent = String(e);
       document.body.className = 'error';
     }
-  };
+    const latestConfig = await fetch(this.config, {cache: "reload"});
+    const initialConfig = await this.initialConfig;
+    if ((await latestConfig.json()).databaseLengthBytes != (await initialConfig.json()).databaseLengthBytes) {
+      if (confirm("Database has been updated, reload?")) {
+        location.reload();
+      }
+    }
+  }
 }
 
 (new LinuxMirror()).init();
