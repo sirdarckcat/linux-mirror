@@ -106,12 +106,14 @@ class LinuxMirror {
       const ranges = allRanges[tag] = allRanges[tag] || [];
       [...pre.childNodes].forEach(node=>
         node.nodeName == "#text" &&
+        node.nodeValue &&
         node.nodeValue.replace(
               regexp,
               (match, offset)=> {
                 ranges.unshift(document.createRange());
                 ranges[0].setStart(node, offset);
                 ranges[0].setEnd(node, offset + match.length);
+                return match;
               }));
     };
     scanNodes(/\b[0-9a-f]{7,40}\b/g, 'a');
