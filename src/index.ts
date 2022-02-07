@@ -100,6 +100,33 @@ class LinuxMirror {
     };
   }
 
+  public format(pre) {
+    const allRanges = {}, allTags = [];
+    const scanNodes = (regexp, tag) => {
+      if (!allRanges[tag]) {
+        allRanges[tag] = [];
+        allTags.push(tag);
+      }
+      const ranges = allRanges[tag];
+      [...pre.childNodes].forEach(node=>
+        node.nodeName == "#text" &&
+        node.nodeValue.replace(
+              regexp,
+              (match,offset)=> {
+                ranges.unshift(document.createRange());
+                ranges[0].setStart(node, offset);
+                ranges[0].setEnd(node, offset + match.length);
+              }));
+    };
+    scanNodes(/\b[0-9a-f]{7,40}\b/g, 'a');
+    allTags.forEach(tag=>
+      allRanges[tag].forEach(range=>
+          range.surroundContents(document.createElement(tag))));
+    [...pre.querySelectorAll('a')].forEach(a=>{
+      a.href = '#' + a.textContent;
+    });
+  }
+
   public async doit() {
     const output = document.getElementById('output') || document.body;
     try {
@@ -113,6 +140,7 @@ class LinuxMirror {
       }
       const result = await this.load(commit);
       output.textContent = JSON.stringify(result, null, 1);
+      this.format(output);
       document.body.className = 'done';
     } catch (e) {
       output.textContent = String(e);
