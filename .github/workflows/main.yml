@@ -77,7 +77,7 @@ jobs:
           path: ./
           gzip: false
           headers: |-
-            cache-control: no-cache
+            cache-control: max-age=30, must-revalidate
 
       - name: "Update config"
         env:
