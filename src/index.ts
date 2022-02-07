@@ -9,8 +9,8 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 class LinuxMirror {
   NUM_WORKERS = 6;
   CONFIG = "https://linux-mirror-db.storage.googleapis.com/config.json";
-  workers:(WorkerHttpvfs[]|null) = null;
-  initialConfig: Promise<Response>;
+  workers: (WorkerHttpvfs[] | null) = null;
+  initialConfig: (Promise<Response> | null) = null;
 
   public async init() {
     this.initialConfig = fetch(this.CONFIG);
@@ -33,7 +33,7 @@ class LinuxMirror {
     this.doit();
   }
 
-  private async getGithubCommit (commit: string) {
+  private async getGithubCommit(commit: string) {
     try {
       const ret: any = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${encodeURI(commit)}`)).json();
       if (typeof ret.sha == "undefined" || typeof ret.commit == "undefined") {
@@ -107,23 +107,23 @@ class LinuxMirror {
     const allRanges: Record<string, Range[]> = {};
     const scanNodes = (regexp: RegExp, tag: string) => {
       const ranges = allRanges[tag] = allRanges[tag] || [];
-      [...pre.childNodes].forEach(node=>
+      [...pre.childNodes].forEach(node =>
         node.nodeName == "#text" &&
         node.nodeValue &&
         node.nodeValue.replace(
-              regexp,
-              (match, offset)=> {
-                ranges.unshift(document.createRange());
-                ranges[0].setStart(node, offset);
-                ranges[0].setEnd(node, offset + match.length);
-                return match;
-              }));
+          regexp,
+          (match, offset) => {
+            ranges.unshift(document.createRange());
+            ranges[0].setStart(node, offset);
+            ranges[0].setEnd(node, offset + match.length);
+            return match;
+          }));
     };
     scanNodes(/\b[0-9a-f]{7,40}\b/g, 'a');
     Object.entries(allRanges).forEach(([tag, ranges]) =>
-      ranges.forEach(range=>
-          range.surroundContents(document.createElement(tag))));
-    [...pre.querySelectorAll('a')].forEach(a=>{
+      ranges.forEach(range =>
+        range.surroundContents(document.createElement(tag))));
+    [...pre.querySelectorAll('a')].forEach(a => {
       a.href = '#' + a.textContent;
     });
   }
@@ -146,12 +146,14 @@ class LinuxMirror {
     } catch (e) {
       output.textContent = String(e);
       document.body.className = 'error';
-    }
-    const latestConfig = await fetch(this.config, {cache: "reload"});
-    const initialConfig = await this.initialConfig;
-    if ((await latestConfig.json()).databaseLengthBytes != (await initialConfig.json()).databaseLengthBytes) {
-      if (confirm("Database has been updated, reload?")) {
-        location.reload();
+      if (this.initialConfig) {
+        const latestConfig = await fetch(this.config, { cache: "reload" });
+        const initialConfig = await this.initialConfig;
+        if ((await latestConfig.json()).databaseLengthBytes != (await initialConfig.json()).databaseLengthBytes) {
+          if (confirm("Database has been updated, reload?")) {
+            location.reload();
+          }
+        }
       }
     }
   }
