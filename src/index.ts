@@ -59,11 +59,20 @@ async function load(commit: string) {
     workers[4].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit]),
     workers[5].db.query("SELECT reported_by, `commit` FROM reported_by WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
   ];
-  let perfInterval;
-  const isPerf = !!location.href.match(/__PERF__/);
-  if (isPerf) perfInterval = setInterval(() => console.log(...promises), 100);
-  const results = await Promise.all(promises);
-  if (isPerf) clearInterval(perfInterval);
+  let results;
+  if (location.href.match(/__PERF__/)) {
+    console.time("promise perf");
+    const perfInterval = setInterval(() => console.log(...promises), 100);
+    results = await Promise.all([promises].map(async (promise, i) => {
+      const ret = await promise; console.timeLog("promise perf");
+      console.log(i);
+      return ret;
+    }));
+    clearInterval(perfInterval);
+    console.timeEnd("promise perf");
+  } else {
+    results = await Promise.all(promises);
+  }
 
   return {
     commit,
