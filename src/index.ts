@@ -23,7 +23,7 @@ async function load(commit: string) {
     );
     workerPromises.push(worker);
   }
-  const workers = Promise.all(workerPromises);
+  const workers = await Promise.all(workerPromises);
 
   let githubCommit = null;
   const getGithubCommit = async () => {
@@ -59,7 +59,7 @@ async function load(commit: string) {
     workers[4].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit]),
     workers[5].db.query("SELECT reported_by, `commit` FROM reported_by WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
   ];
-  const perfInterval;
+  let perfInterval: number = 0;
   if (location.href.match(/__PERF__/)) perfInterval = setInterval(() => console.log(...promises), 100);
   const results = await Promise.all(promises);
   if (location.href.match(/__PERF__/)) clearInterval(perfInterval);
