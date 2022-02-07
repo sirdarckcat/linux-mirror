@@ -100,9 +100,9 @@ class LinuxMirror {
     };
   }
 
-  public format(pre) {
-    const allRanges = {}, allTags = [];
-    const scanNodes = (regexp, tag) => {
+  public format(pre: Element) {
+    const allRanges: Object<string, Range[]> = {}, allTags: string[] = [];
+    const scanNodes = (regexp: RegExp, tag: string) => {
       if (!allRanges[tag]) {
         allRanges[tag] = [];
         allTags.push(tag);
@@ -112,7 +112,7 @@ class LinuxMirror {
         node.nodeName == "#text" &&
         node.nodeValue.replace(
               regexp,
-              (match,offset)=> {
+              (match, offset)=> {
                 ranges.unshift(document.createRange());
                 ranges[0].setStart(node, offset);
                 ranges[0].setEnd(node, offset + match.length);
