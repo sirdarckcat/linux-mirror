@@ -63,8 +63,9 @@ async function load(commit: string) {
   if (location.href.match(/__PERF__/)) {
     console.time("promise perf");
     const perfInterval = setInterval(() => console.log(...promises), 100);
-    results = await Promise.all([promises].map(async (promise, i) => {
-      const ret = await promise; console.timeLog("promise perf");
+    results = await Promise.all(promises.map(async (promise, i) => {
+      const ret = await promise;
+      console.timeLog("promise perf");
       console.log(i);
       return ret;
     }));
