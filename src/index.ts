@@ -8,7 +8,7 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
 class LinuxMirror {
   NUM_WORKERS = 6;
-  workers:WorkerHttpvfs = null;
+  workers:(WorkerHttpvfs[]|null) = null;
 
   public async init() {
     const workerPromises = [];
@@ -26,6 +26,8 @@ class LinuxMirror {
       workerPromises.push(worker);
     }
     this.workers = await Promise.all(workerPromises);
+    window.onhashchange = () => this.doit();
+    this.doit();
   }
 
   private async getGithubCommit (commit: string) {
@@ -119,7 +121,4 @@ class LinuxMirror {
   };
 }
 
-(new LinuxMirror()).init().then(() => {
-  onhashchange = () => this.doit();
-  this.doit();
-});
+(new LinuxMirror()).init();
