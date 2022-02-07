@@ -101,13 +101,9 @@ class LinuxMirror {
   }
 
   public format(pre: Element) {
-    const allRanges: Object<string, Range[]> = {}, allTags: string[] = [];
+    const allRanges: Record<string, Range[]> = {};
     const scanNodes = (regexp: RegExp, tag: string) => {
-      if (!allRanges[tag]) {
-        allRanges[tag] = [];
-        allTags.push(tag);
-      }
-      const ranges = allRanges[tag];
+      const ranges = allRanges[tag] = allRanges[tag] || [];
       [...pre.childNodes].forEach(node=>
         node.nodeName == "#text" &&
         node.nodeValue.replace(
@@ -119,8 +115,8 @@ class LinuxMirror {
               }));
     };
     scanNodes(/\b[0-9a-f]{7,40}\b/g, 'a');
-    allTags.forEach(tag=>
-      allRanges[tag].forEach(range=>
+    Object.entries(allRanges).forEach(([tag, ranges]) =>
+      ranges.forEach(range=>
           range.surroundContents(document.createElement(tag))));
     [...pre.querySelectorAll('a')].forEach(a=>{
       a.href = '#' + a.textContent;
