@@ -50,13 +50,6 @@ class LinuxMirror {
       throw new Error("Workers are not initialized.");
     }
 
-    switch (commit) {
-      case "syzkaller":
-        return (await this.workers[0].db.query("SELECT * FROM reported_by;"));
-      case "cves":
-        return (await this.workers[0].db.query("SELECT * FROM cve ORDER BY cve DESC;"));
-    }
-
     if (commit.match(/^CVE-\d+-\d+$/)) {
       const cveResults: any = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
       if (!cveResults) {
