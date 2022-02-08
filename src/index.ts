@@ -46,6 +46,16 @@ class LinuxMirror {
   }
 
   public async load(commit: string) {
+    const cveDetails = {};
+    if (commit.match(/^CVE-\d+-\d+$/)) {
+      const cveResults = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
+      if (!cveResults) {
+        throw new Error('No commit exists for this CVE');
+      }
+      cveDetails = fetch("https://cve.circl.lu/api/cve/" + commit).then(res => res.json());
+      commit = cveResults[0].commit;
+    }
+
     let githubCommit = null;
 
     if (commit.length < 40) {
@@ -72,6 +82,8 @@ class LinuxMirror {
       this.workers[3].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` >= ? AND `commit` <= ? || 'g' AND LENGTH(fixes)>=4) ON (upstream>trunc AND upstream<trunc||'g'))", [commit, commit]),
       this.workers[4].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit]),
       this.workers[5].db.query("SELECT reported_by, `commit` FROM reported_by WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
+      this.workers[5].db.query("SELECT cve FROM cve WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
+      cveDetails
     ];
     let results;
     if (location.href.match(/__PERF__/)) {
@@ -99,7 +111,9 @@ class LinuxMirror {
       "the buggy commit landed on upstream on": results.shift(),
       "the buggy commit was backported to": results.shift(),
       "the commit introduced a bug fixed by": results.shift(),
-      "syzkaller reference for the commit and the fix commit": results.shift()
+      "syzkaller reference for the commit and the fix commit": results.shift(),
+      "cve identifier for the commit and the fix commit": results.shift(),
+      "cve details": results.shift()
     };
   }
 
@@ -119,7 +133,7 @@ class LinuxMirror {
             return match;
           }));
     };
-    scanNodes(/\b[0-9a-f]{7,40}\b/g, 'a');
+    scanNodes(/\b([0-9a-f]{7,40}|CVE-\d+-\d+)\b/g, 'a');
     Object.entries(allRanges).forEach(([tag, ranges]) =>
       ranges.forEach(range =>
         range.surroundContents(document.createElement(tag))));
