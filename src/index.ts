@@ -50,13 +50,11 @@ class LinuxMirror {
       throw new Error("Workers are not initialized.");
     }
 
-    let cveDetails = {};
     if (commit.match(/^CVE-\d+-\d+$/)) {
       const cveResults: any = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
       if (!cveResults) {
         throw new Error('No commit exists for this CVE');
       }
-      cveDetails = fetch("https://cve.circl.lu/api/cve/" + commit).then(res => res.json());
       commit = cveResults[0].commit;
     }
 
@@ -83,7 +81,6 @@ class LinuxMirror {
       this.workers[4].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit]),
       this.workers[5].db.query("SELECT reported_by, `commit` FROM reported_by WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
       this.workers[5].db.query("SELECT cve FROM cve WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g')", [commit, commit, commit, commit]),
-      cveDetails
     ];
     let results;
     if (location.href.match(/__PERF__/)) {
@@ -113,7 +110,6 @@ class LinuxMirror {
       "the commit introduced a bug fixed by": results.shift(),
       "syzkaller reference for the commit and the fix commit": results.shift(),
       "cve identifier for the commit and the fix commit": results.shift(),
-      "cve details": results.shift()
     };
   }
 
