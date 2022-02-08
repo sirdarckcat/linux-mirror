@@ -46,9 +46,13 @@ class LinuxMirror {
   }
 
   public async load(commit: string) {
-    const cveDetails = {};
+    if (!this.workers) {
+      throw new Error("Workers are not initialized.");
+    }
+
+    let cveDetails = {};
     if (commit.match(/^CVE-\d+-\d+$/)) {
-      const cveResults = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
+      const cveResults: ({commit: string})[] = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
       if (!cveResults) {
         throw new Error('No commit exists for this CVE');
       }
@@ -66,10 +70,6 @@ class LinuxMirror {
 
     if (commit.length < 4 || (commit.length < 7 && commit.length >= 4 && !confirm("Commit is very short - might return too many (or incorrect) results."))) {
       throw new Error("Commit is too short");
-    }
-
-    if (!this.workers) {
-      throw new Error("Workers are not initialized.");
     }
 
     const promises = [
