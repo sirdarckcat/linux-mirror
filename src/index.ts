@@ -52,7 +52,7 @@ class LinuxMirror {
 
     let cveDetails = {};
     if (commit.match(/^CVE-\d+-\d+$/)) {
-      const cveResults: ({commit: string})[] = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
+      const cveResults: any = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
       if (!cveResults) {
         throw new Error('No commit exists for this CVE');
       }
