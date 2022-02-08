@@ -133,7 +133,7 @@ class LinuxMirror {
             return match;
           }));
     };
-    scanNodes(/\b([0-9a-f]{7,40}|CVE-\d+-\d+)\b/g, 'a');
+    scanNodes(/\b(?:[0-9a-f]{7,40}|CVE-\d+-\d+)\b/g, 'a');
     Object.entries(allRanges).forEach(([tag, ranges]) =>
       ranges.forEach(range =>
         range.surroundContents(document.createElement(tag))));
