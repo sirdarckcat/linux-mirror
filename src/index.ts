@@ -52,9 +52,9 @@ class LinuxMirror {
 
     switch (commit) {
       case "syzkaller":
-        return (await this.workers[0].db.query("SELECT reported_by, reported_by.`commit`, tags FROM reported_by JOIN tags ON (tags.`commit`=reported_by.`commit`) ORDER BY tags DESC;"));
+        return (await this.workers[0].db.query("SELECT * FROM reported_by;"));
       case "cves":
-        return (await this.workers[0].db.query("SELECT cve, cve.`commit`, tags FROM cve JOIN tags ON (tags.`commit`=cve.`commit`) ORDER BY cve DESC;"));
+        return (await this.workers[0].db.query("SELECT * FROM cve ORDER BY cve DESC;"));
     }
 
     if (commit.match(/^CVE-\d+-\d+$/)) {
