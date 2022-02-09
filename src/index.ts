@@ -100,7 +100,7 @@ class LinuxMirror {
     }
 
     return {
-      ...(cveResults?{cve, "commits associated with cve": cveResults}:{}),
+      ...(cve?{cve, "commits associated with cve": cveResults}:{}),
       commit,
       "details": results.shift().commit.message.split("\n"),
       "the commit landed on upstream on": results.shift(),
