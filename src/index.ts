@@ -49,9 +49,10 @@ class LinuxMirror {
     if (!this.workers) {
       throw new Error("Workers are not initialized.");
     }
-
+    let cveResults: any = [], cve = "";
     if (commit.match(/^CVE-\d+-\d+$/)) {
-      const cveResults: any = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
+      cve = commit;
+      cveResults = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
       if (!cveResults) {
         throw new Error('No commit exists for this CVE');
       }
@@ -99,6 +100,7 @@ class LinuxMirror {
     }
 
     return {
+      ...(cveResults?{cve, "commits associated with cve": cveResults}:{}),
       commit,
       "details": results.shift().commit.message.split("\n"),
       "the commit landed on upstream on": results.shift(),
