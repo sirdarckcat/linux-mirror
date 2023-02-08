@@ -50,7 +50,8 @@ jobs:
           sqlite3 mirror.sl3 'CREATE INDEX cve_commit ON cve (`commit`,`cve`);'
           sqlite3 mirror.sl3 'CREATE INDEX cve_cve ON cve (`cve`,`commit`);'
           sqlite3 mirror.sl3 'pragma journal_mode = delete; pragma page_size = 1024; vacuum;'
-          echo "::set-output name=databaseChecksum::$(sha1sum mirror.sl3 | cut -f1 -d' ')"
+          echo "databaseChecksum=$(sha1sum mirror.sl3 | cut -f1 -d' ')" >> $GITHUB_OUTPUT
+          sha1sum mirror.sl3
 
       - id: 'split-db'
         run: |
@@ -58,8 +59,9 @@ jobs:
           requestChunkSize="$(sqlite3 "${DB_NAME}" 'pragma page_size')"
           rm -f ${URL_PREFIX}*
           split "${DB_NAME}" --bytes=${SERVER_CHUNK_SIZE} --suffix-length=${SUFFIX_LENGTH} --numeric-suffixes ${URL_PREFIX}
-          echo "::set-output name=requestChunkSize::${requestChunkSize}"
-          echo "::set-output name=databaseLengthBytes::${databaseLengthBytes}"
+          echo "requestChunkSize=${requestChunkSize}" >> $GITHUB_OUTPUT
+          echo "databaseLengthBytes=${databaseLengthBytes}" >> $GITHUB_OUTPUT
+          ls
 
       - uses: 'google-github-actions/auth@v0'
         with:
