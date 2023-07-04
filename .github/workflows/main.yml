@@ -114,7 +114,8 @@ jobs:
 
       - id: 'version-control-config'
         run: |
-          git config user.name "GitHub Actions Bot"
+          git config --local user.name "GitHub Actions Bot"
+          git config --local user.email "action@github.com"
           git add config.json
           git commit -am 'update config.json ${{ steps.split-db.outputs.databaseChecksum }}'
           git push
