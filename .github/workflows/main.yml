@@ -111,3 +111,10 @@ jobs:
           destination: '${{ env.BUCKET_NAME }}'
           headers: |-
             cache-control: max-age=3, must-revalidate
+
+      - id: 'version-control-config'
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git add config.json
+          git commit -am 'update config.json ${{ steps.split-db.outputs.databaseChecksum }}'
+          git push
