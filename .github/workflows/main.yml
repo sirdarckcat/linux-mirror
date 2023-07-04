@@ -31,6 +31,7 @@ jobs:
           wget https://${BUCKET_NAME}.storage.googleapis.com/tags.csv
           wget https://${BUCKET_NAME}.storage.googleapis.com/upstream.csv
           wget https://${BUCKET_NAME}.storage.googleapis.com/cve.csv
+          wget https://${BUCKET_NAME}.storage.googleapis.com/syzkaller.csv
 
       - name: Recreate SQLite3 DB
         run: |
@@ -41,6 +42,7 @@ jobs:
           sqlite3 mirror.sl3 '.mode csv' '.import tags.csv tags'
           sqlite3 mirror.sl3 '.mode csv' '.import upstream.csv upstream'
           sqlite3 mirror.sl3 '.mode csv' '.import cve.csv cve'
+          sqlite3 mirror.sl3 '.mode csv' '.import syzkaller.csv syzkaller'
           sqlite3 mirror.sl3 'CREATE INDEX fixes_commit ON fixes (`commit`,`fixes`);'
           sqlite3 mirror.sl3 'CREATE INDEX fixes_fixes ON fixes (`fixes`,`commit`);'
           sqlite3 mirror.sl3 'CREATE INDEX reported_by_commit ON reported_by (`commit`,`reported_by`);'
