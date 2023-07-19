@@ -50,13 +50,21 @@ class LinuxMirror {
       throw new Error("Workers are not initialized.");
     }
     let cveResults: any = [], cve = "";
+    let syzkallerResults: any = [], syzkaller = "";
     if (commit.match(/^CVE-\d+-\d+$/)) {
       cve = commit;
-      cveResults = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [commit]));
+      cveResults = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [cve]));
       if (!cveResults) {
         throw new Error('No commit exists for this CVE');
       }
       commit = cveResults[0].commit;
+    } else if (commit.match(/^id=[0-9a-f]+$/)) {
+      syzkaller = commit;
+      syzkallerResults = (await this.workers[5].db.query("SELECT `commit` FROM syzkaller WHERE 'id='||syzkaller = ?", [syzkaller]));
+      if (!syzkallerResults) {
+        throw new Error('No commit exists for this Syzkaller scan');
+      }
+      commit = syzkallerResults[0].commit;
     }
 
     let githubCommit = null;
@@ -80,7 +88,7 @@ class LinuxMirror {
       this.workers[2].db.query("SELECT tags, `commit` FROM tags JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` >= ? AND `commit` <= ? || 'g' AND LENGTH(fixes)>=4) ON (`commit`>trunc AND `commit`<trunc||'g')", [commit, commit]),
       this.workers[3].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM upstream JOIN (SELECT substr(fixes, 0, instr(fixes, ' ')) trunc FROM fixes WHERE `commit` >= ? AND `commit` <= ? || 'g' AND LENGTH(fixes)>=4) ON (upstream>trunc AND upstream<trunc||'g'))", [commit, commit]),
       this.workers[4].db.query("SELECT tags, `commit` FROM tags WHERE `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g' AND SUBSTR(fixes, 0, instr(fixes, ' ')) = SUBSTR(?, 0, instr(fixes, ' ')))", [commit, commit, commit]),
-      this.workers[5].db.query("SELECT syzkaller, `commit` FROM syzkaller WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g' AND SUBSTR(fixes, 0, instr(fixes, ' ')) = SUBSTR(?, 0, instr(fixes, ' ')))", [commit, commit, commit, commit, commit]),
+      this.workers[5].db.query("SELECT 'id='||syzkaller, `commit` FROM syzkaller WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g' AND SUBSTR(fixes, 0, instr(fixes, ' ')) = SUBSTR(?, 0, instr(fixes, ' ')))", [commit, commit, commit, commit, commit]),
       this.workers[5].db.query("SELECT cve FROM cve WHERE (`commit` >= ? AND `commit` <= ? || 'g') OR `commit` IN (SELECT `commit` FROM fixes WHERE LENGTH(fixes)>=4 AND fixes >= substr(?, 1, 4) AND fixes <= ? || 'g' AND SUBSTR(fixes, 0, instr(fixes, ' ')) = SUBSTR(?, 0, instr(fixes, ' ')))", [commit, commit, commit, commit, commit]),
     ];
     let results;
@@ -101,6 +109,7 @@ class LinuxMirror {
 
     return {
       ...(cve?{cve, "commits associated with cve": cveResults}:{}),
+      ...(syzkaller?{syzkaller, "commits associated with syzkaller": syzkallerResults}:{}),
       commit,
       "details": results.shift().commit.message.split("\n"),
       "the commit landed on upstream on": results.shift(),
@@ -131,7 +140,7 @@ class LinuxMirror {
             return match;
           }));
     };
-    scanNodes(/\b(?:[0-9a-f]{7,40}|CVE-\d+-\d+)\b/g, 'a');
+    scanNodes(/\b(?:(?:id=)?[0-9a-f]{7,40}|CVE-\d+-\d+)\b/g, 'a');
     Object.entries(allRanges).forEach(([tag, ranges]) =>
       ranges.forEach(range =>
         range.surroundContents(document.createElement(tag))));
