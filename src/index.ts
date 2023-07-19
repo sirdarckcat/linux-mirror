@@ -54,14 +54,14 @@ class LinuxMirror {
     if (commit.match(/^CVE-\d+-\d+$/)) {
       cve = commit;
       cveResults = (await this.workers[5].db.query("SELECT `commit` FROM cve WHERE cve = ?", [cve]));
-      if (!cveResults) {
+      if (!cveResults || !cveResults.length) {
         throw new Error('No commit exists for this CVE');
       }
       commit = cveResults[0].commit;
     } else if (commit.match(/^id=[0-9a-f]+$/)) {
       syzkaller = commit;
       syzkallerResults = (await this.workers[5].db.query("SELECT `commit` FROM syzkaller WHERE 'id='||syzkaller = ?", [syzkaller]));
-      if (!syzkallerResults) {
+      if (!syzkallerResults || !syzkallerResults.length) {
         throw new Error('No commit exists for this Syzkaller scan');
       }
       commit = syzkallerResults[0].commit;
