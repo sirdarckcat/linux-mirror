@@ -173,7 +173,7 @@ jobs:
           headers: |-
             cache-control: max-age=3, must-revalidate
 
-      - id: 'upload-config ubuntu'
+      - id: 'upload-config-ubuntu'
         uses: 'google-github-actions/upload-cloud-storage@v0'
         with:
           parent: false
