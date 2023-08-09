@@ -16,7 +16,9 @@ jobs:
     env:
       BUCKET_NAME: linux-mirror-db
       DB_NAME: mirror.sl3
+      DB_NAME_UBUNTU: ubuntu.sl3
       URL_PREFIX: mirror-chunk-
+      URL_PREFIX_UBUNTU: mirror-ubuntu-chunk-
       # 10MB = 10 * 1024 * 1024 = 10485760
       SERVER_CHUNK_SIZE: 10485760
       SUFFIX_LENGTH: 3
@@ -30,13 +32,15 @@ jobs:
           wget https://${BUCKET_NAME}.storage.googleapis.com/reported_by.csv
           wget https://${BUCKET_NAME}.storage.googleapis.com/tags.csv
           wget https://${BUCKET_NAME}.storage.googleapis.com/upstream.csv
+          wget https://${BUCKET_NAME}.storage.googleapis.com/ubuntu_tags.csv
+          wget https://${BUCKET_NAME}.storage.googleapis.com/ubuntu_upstream.csv
           wget https://${BUCKET_NAME}.storage.googleapis.com/cve.csv
           wget https://${BUCKET_NAME}.storage.googleapis.com/syzkaller.csv
 
       - name: Recreate SQLite3 DB
         run: |
           sudo apt update && sudo apt install sqlite3
-          rm -f mirror.sl3
+          rm -f mirror.sl3 ubuntu.sl3
           sqlite3 mirror.sl3 '.mode csv' '.import fixes.csv fixes'
           sqlite3 mirror.sl3 '.mode csv' '.import reported_by.csv reported_by'
           sqlite3 mirror.sl3 '.mode csv' '.import tags.csv tags'
@@ -52,8 +56,24 @@ jobs:
           sqlite3 mirror.sl3 'CREATE INDEX cve_commit ON cve (`commit`,`cve`);'
           sqlite3 mirror.sl3 'CREATE INDEX cve_cve ON cve (`cve`,`commit`);'
           sqlite3 mirror.sl3 'pragma journal_mode = delete; pragma page_size = 1024; vacuum;'
+          sqlite3 ubuntu.sl3 '.mode csv' '.import fixes.csv fixes'
+          sqlite3 ubuntu.sl3 '.mode csv' '.import reported_by.csv reported_by'
+          sqlite3 ubuntu.sl3 '.mode csv' '.import ubuntu_tags.csv tags'
+          sqlite3 ubuntu.sl3 '.mode csv' '.import ubuntu_upstream.csv upstream'
+          sqlite3 ubuntu.sl3 '.mode csv' '.import cve.csv cve'
+          sqlite3 ubuntu.sl3 '.mode csv' '.import syzkaller.csv syzkaller'
+          sqlite3 ubuntu.sl3 'CREATE INDEX fixes_commit ON fixes (`commit`,`fixes`);'
+          sqlite3 ubuntu.sl3 'CREATE INDEX fixes_fixes ON fixes (`fixes`,`commit`);'
+          sqlite3 ubuntu.sl3 'CREATE INDEX reported_by_commit ON reported_by (`commit`,`reported_by`);'
+          sqlite3 ubuntu.sl3 'CREATE INDEX tags_commit ON tags (`commit`,`tags`);'
+          sqlite3 ubuntu.sl3 'CREATE INDEX upstream_commit ON upstream (`commit`,`upstream`);'
+          sqlite3 ubuntu.sl3 'CREATE INDEX upstream_upstream ON upstream (`upstream`,`commit`);'
+          sqlite3 ubuntu.sl3 'CREATE INDEX cve_commit ON cve (`commit`,`cve`);'
+          sqlite3 ubuntu.sl3 'CREATE INDEX cve_cve ON cve (`cve`,`commit`);'
+          sqlite3 ubuntu.sl3 'pragma journal_mode = delete; pragma page_size = 1024; vacuum;'
           echo "databaseChecksum=$(sha1sum mirror.sl3 | cut -f1 -d' ')" >> $GITHUB_OUTPUT
-          sha1sum mirror.sl3
+          echo "databaseChecksumUbuntu=$(sha1sum ubuntu.sl3 | cut -f1 -d' ')" >> $GITHUB_OUTPUT
+          sha1sum mirror.sl3 ubuntu.sl3
 
       - id: 'split-db'
         run: |
@@ -61,6 +81,14 @@ jobs:
           requestChunkSize="$(sqlite3 "${DB_NAME}" 'pragma page_size')"
           rm -f ${URL_PREFIX}*
           split "${DB_NAME}" --bytes=${SERVER_CHUNK_SIZE} --suffix-length=${SUFFIX_LENGTH} --numeric-suffixes ${URL_PREFIX}
+
+          databaseLengthBytesUbuntu="$(stat --printf="%s" "${DB_NAME_UBUNTU}")"
+          requestChunkSizeUbuntu="$(sqlite3 "${DB_NAME_UBUNTU}" 'pragma page_size')"
+          rm -f ${URL_PREFIX_UBUNTU}*
+          split "${DB_NAME_UBUNTU}" --bytes=${SERVER_CHUNK_SIZE} --suffix-length=${SUFFIX_LENGTH} --numeric-suffixes ${URL_PREFIX_UBUNTU}
+
+          echo "requestChunkSizeUbuntu=${requestChunkSizeUbuntu}" >> $GITHUB_OUTPUT
+          echo "databaseLengthBytesUbuntu=${databaseLengthBytesUbuntu}" >> $GITHUB_OUTPUT
           echo "requestChunkSize=${requestChunkSize}" >> $GITHUB_OUTPUT
           echo "databaseLengthBytes=${databaseLengthBytes}" >> $GITHUB_OUTPUT
           ls
@@ -77,11 +105,28 @@ jobs:
           path: '${{ env.DB_NAME }}'
           destination: '${{ env.BUCKET_NAME }}'
 
+      - id: 'upload-db-ubuntu'
+        uses: 'google-github-actions/upload-cloud-storage@v0'
+        with:
+          parent: false
+          path: '${{ env.DB_NAME_UBUNTU }}'
+          destination: '${{ env.BUCKET_NAME }}'
+
       - id: 'upload-db-chunks'
         uses: 'google-github-actions/upload-cloud-storage@v0'
         with:
           destination: '${{ env.BUCKET_NAME }}/'
           glob: '${{ env.URL_PREFIX }}*'
+          path: ./
+          gzip: false
+          headers: |-
+            cache-control: max-age=30, must-revalidate
+
+      - id: 'upload-db-chunks-ubuntu'
+        uses: 'google-github-actions/upload-cloud-storage@v0'
+        with:
+          destination: '${{ env.BUCKET_NAME }}/'
+          glob: '${{ env.URL_PREFIX_UBUNTU }}*'
           path: ./
           gzip: false
           headers: |-
@@ -103,6 +148,22 @@ jobs:
               "suffixLength": '${SUFFIX_LENGTH}'
           }' | tee "config.json"
 
+      - name: "Update config ubuntu"
+        env:
+          requestChunkSize: '${{ steps.split-db.outputs.requestChunkSizeUbuntu }}'
+          databaseLengthBytes: '${{ steps.split-db.outputs.databaseLengthBytesUbuntu }}'
+          databaseChecksum: '${{ steps.split-db.outputs.databaseChecksumUbuntu }}'
+          uploadedPath: 'https://storage.googleapis.com/${{ env.BUCKET_NAME }}/${{ env.URL_PREFIX_UBUNTU }}'
+        run: |
+          echo '{
+              "serverMode": "chunked",
+              "requestChunkSize": '${requestChunkSize}',
+              "databaseLengthBytes": '${databaseLengthBytes}',
+              "serverChunkSize": '${SERVER_CHUNK_SIZE}',
+              "urlPrefix": "'${uploadedPath}'",
+              "suffixLength": '${SUFFIX_LENGTH}'
+          }' | tee "config-ubuntu.json"
+
       - id: 'upload-config'
         uses: 'google-github-actions/upload-cloud-storage@v0'
         with:
@@ -112,10 +173,18 @@ jobs:
           headers: |-
             cache-control: max-age=3, must-revalidate
 
+      - id: 'upload-config ubuntu'
+        uses: 'google-github-actions/upload-cloud-storage@v0'
+        with:
+          parent: false
+          path: 'config-ubuntu.json'
+          destination: '${{ env.BUCKET_NAME }}'
+          headers: |-
+            cache-control: max-age=3, must-revalidate
+
       - id: 'version-control-config'
         run: |
           git config --local user.name "GitHub Actions Bot"
           git config --local user.email "action@github.com"
-          git add config.json
-          (git commit -am 'update config.json ${{ steps.split-db.outputs.databaseChecksum }}' && git push) || true
-
+          git add config.json config-ubuntu.json
+          (git commit -am 'update config.json ${{ steps.split-db.outputs.databaseChecksum }} ${{ steps.split-db.outputs.databaseChecksumUbuntu }}' && git push) || true
