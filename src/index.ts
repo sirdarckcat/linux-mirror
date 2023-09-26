@@ -18,16 +18,16 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
 class LinuxMirror {
   NUM_WORKERS = 6;
-  CONFIG = '';
-  REPO = '';
+  CONFIG = CONFIGS.mainline;
+  REPO = REPOS.mainline;
   workers: (WorkerHttpvfs[] | null) = null;
   initialConfig: (Promise<Response> | null) = null;
 
   public async init() {
-    let variant = 'mainline';
-    if (location.pathname == '/ubuntu/') variant = 'ubuntu';
-    this.CONFIG = CONFIGS[variant];
-    this.REPO = REPOS[variant];
+    if (location.pathname == '/ubuntu/') {
+      this.CONFIG = CONFIGS.ubuntu;
+      this.REPO = REPOS.ubuntu;
+    }
     this.initialConfig = fetch(this.CONFIG);
     const workerPromises = [];
     for (let i = 0; i < this.NUM_WORKERS; i++) {
