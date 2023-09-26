@@ -1,5 +1,15 @@
 import { createDbWorker, WorkerHttpvfs } from "sql.js-httpvfs";
 
+const CONFIGS = {
+  mainline: 'https://linux-mirror-db.storage.googleapis.com/config.json',
+  ubuntu: 'https://linux-mirror-db.storage.googleapis.com/config-ubuntu.json'
+};
+
+const REPOS = {
+  mainline: 'sirdarckcat/linux-1',
+  ubuntu: 'sirdarckcat/ubuntu'
+};
+
 const workerUrl = new URL(
   "sql.js-httpvfs/dist/sqlite.worker.js",
   import.meta.url
@@ -8,11 +18,14 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
 class LinuxMirror {
   NUM_WORKERS = 6;
-  CONFIG = "https://linux-mirror-db.storage.googleapis.com/config.json";
   workers: (WorkerHttpvfs[] | null) = null;
   initialConfig: (Promise<Response> | null) = null;
 
   public async init() {
+    let variant = 'mainline';
+    if (location.pathname == '/ubuntu/') variant = 'ubuntu';
+    this.CONFIG = CONFIGS[variant];
+    this.REPO = REPOS[variant];
     this.initialConfig = fetch(this.CONFIG);
     const workerPromises = [];
     for (let i = 0; i < this.NUM_WORKERS; i++) {
@@ -35,7 +48,7 @@ class LinuxMirror {
 
   private async getGithubCommit(commit: string) {
     try {
-      const ret: any = await (await fetch(`https://api.github.com/repos/sirdarckcat/linux-1/commits/${encodeURI(commit)}`)).json();
+      const ret: any = await (await fetch(`https://api.github.com/repos/${this.REPO}/commits/${encodeURI(commit)}`)).json();
       if (typeof ret.sha == "undefined" || typeof ret.commit == "undefined") {
         return { sha: commit, commit: { message: "[!] GitHub error: " + ret.message } }
       }
