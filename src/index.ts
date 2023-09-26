@@ -18,8 +18,8 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
 class LinuxMirror {
   NUM_WORKERS = 6;
-  CONFIG = null;
-  REPO = null;
+  CONFIG = '';
+  REPO = '';
   workers: (WorkerHttpvfs[] | null) = null;
   initialConfig: (Promise<Response> | null) = null;
 
