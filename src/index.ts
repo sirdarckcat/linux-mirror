@@ -171,7 +171,7 @@ class LinuxMirror {
       output.textContent = 'Loading ' + commit;
       document.body.className = 'loading';
       if (!commit) {
-        location.hash = "73f156a";
+        location.hash = "23f57406";
         location.reload();
         return;
       }
