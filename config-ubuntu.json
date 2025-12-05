@@ -1,7 +1,7 @@
 {
     "serverMode": "chunked",
     "requestChunkSize": 1024,
-    "databaseLengthBytes": 1220295680,
+    "databaseLengthBytes": 1220362240,
     "serverChunkSize": 10485760,
     "urlPrefix": "https://storage.googleapis.com/linux-mirror-db/mirror-ubuntu-chunk-",
     "suffixLength": 3
